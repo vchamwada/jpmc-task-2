@@ -2,14 +2,15 @@ import React, { Component } from 'react';
 import DataStreamer, { ServerRespond } from './DataStreamer';
 import Graph from './Graph';
 import './App.css';
+import {setInterval} from "timers";
 
 /**
  * State declaration for <App />
  */
 interface IState {
   data: ServerRespond[],
+  showGraph: boolean,
 }
-
 /**
  * The parent element of the react app.
  * It renders title, button and Graph react element.
@@ -21,26 +22,42 @@ class App extends Component<{}, IState> {
     this.state = {
       // data saves the server responds.
       // We use this state to parse data down to the child element (Graph) as element property
+      //False - so that the graph is not visible when Start Streaming Data has not been clicked
       data: [],
+      showGraph: false,
     };
   }
 
   /**
    * Render Graph react component with state.data parse as property data
    */
+  //renders graph once start streaming button has been clicked
   renderGraph() {
-    return (<Graph data={this.state.data}/>)
+    if (this.state.showGraph) {
+      return (<Graph data={this.state.data}/>)
+    }
   }
 
   /**
    * Get new data from server and update the state with the new data
    */
+  //streams data continuously rather than on button click
   getDataFromServer() {
-    DataStreamer.getData((serverResponds: ServerRespond[]) => {
-      // Update the state by creating a new array of data that consists of
-      // Previous data in the state and the new data from server
-      this.setState({ data: [...this.state.data, ...serverResponds] });
-    });
+    let x = 0;
+    const interval = setInterval(() => {
+      DataStreamer.getData((serverResponds: ServerRespond[]) => {
+        // Update the state by creating a new array of data that consists of
+        // Previous data in the state and the new data from server
+        this.setState({
+          data: serverResponds,
+          showGraph: true,
+       });
+      });
+      x++;
+      if (x > 1000) {
+        clearInterval(interval);
+      }
+    }, 100);
   }
 
   /**
